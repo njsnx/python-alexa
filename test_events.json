@@ -1,0 +1,131 @@
+{
+  "launch": {
+    "session": {
+      "sessionId": "SessionId.608e2b77-75bc-4c7d-9a77-2210c262a0d0",
+      "application": {
+        "applicationId": "amzn1.ask.skill.b4d78395-8d71-4ded-ac76-5106bf519081"
+      },
+      "attributes": {
+        "hello": "wow"
+      },
+      "user": {
+        "userId": "amzn1.ask.account.AEZML6E5DPAZZCGHBNK7XYJBKHBQIACKOBE6UWWQLZVN262B65V2VG4UJFPUUFWMEHIRUJIK46L4M2HSPX5EF54YCLA5JQBNFPPLYMEBSIUMCUIESFGBUAE6XF2JCUNYGJRSNHK2DPN556KROZMK5BJWXVTVLUDVH577GM77RHZP6MOM4CY7YTGWEJ74B2MYJSX63GVIX2J65AY"
+      },
+      "new": true
+    },
+    "request": {
+      "type": "LaunchRequest",
+      "requestId": "EdwRequestId.2a6fe37c-f487-40f4-9484-b3b1440cafeb",
+      "locale": "en-US",
+      "timestamp": "2016-11-01T23:05:45Z"
+    },
+    "version": "1.0"
+  },
+  "launch_in": {
+    "sessionId": "SessionId.608e2b77-75bc-4c7d-9a77-2210c262a0d0",
+    "application": {
+      "applicationId": "amzn1.ask.skill.b4d78395-8d71-4ded-ac76-5106bf519081"
+    },
+    "attributes": {
+      "hello": "wow"
+    },
+    "user": {
+      "userId": "amzn1.ask.account.AEZML6E5DPAZZCGHBNK7XYJBKHBQIACKOBE6UWWQLZVN262B65V2VG4UJFPUUFWMEHIRUJIK46L4M2HSPX5EF54YCLA5JQBNFPPLYMEBSIUMCUIESFGBUAE6XF2JCUNYGJRSNHK2DPN556KROZMK5BJWXVTVLUDVH577GM77RHZP6MOM4CY7YTGWEJ74B2MYJSX63GVIX2J65AY"
+    },
+    "new": true
+  },
+  "intent_2":{
+  "session": {
+    "sessionId": "SessionId.9599daf5-a66b-4cb2-bcd9-490274e9e69d",
+    "application": {
+      "applicationId": "amzn1.ask.skill.b4d78395-8d71-4ded-ac76-5106bf519081"
+    },
+    "attributes": {},
+    "user": {
+      "userId": "amzn1.ask.account.AEZML6E5DPAZZCGHBNK7XYJBKHBQIACKOBE6UWWQLZVN262B65V2VG4UJFPUUFWMEHIRUJIK46L4M2HSPX5EF54YCLA5JQBNFPPLYMEBSIUMCUIESFGBUAE6XF2JCUNYGJRSNHK2DPN556KROZMK5BJWXVTVLUDVH577GM77RHZP6MOM4CY7YTGWEJ74B2MYJSX63GVIX2J65AY"
+    },
+    "new": true
+  },
+  "request": {
+    "type": "IntentRequest",
+    "requestId": "EdwRequestId.fc2c5a37-ce73-4b0f-9502-5f6ca1dedbc4",
+    "locale": "en-US",
+    "timestamp": "2016-11-02T03:15:50Z",
+    "intent": {
+      "name": "GetNextList",
+      "slots": {}
+    }
+  },
+  "version": "1.0"
+},
+  "intent_1": {
+    "session": {
+      "sessionId": "SessionId.d72cd6b7-cadd-4cae-8352-b96b801481cf",
+      "application": {
+        "applicationId": "amzn1.ask.skill.b4d78395-8d71-4ded-ac76-5106bf519081"
+      },
+      "attributes": {},
+      "user": {
+        "userId": "amzn1.ask.account.AEZML6E5DPAZZCGHBNK7XYJBKHBQIACKOBE6UWWQLZVN262B65V2VG4UJFPUUFWMEHIRUJIK46L4M2HSPX5EF54YCLA5JQBNFPPLYMEBSIUMCUIESFGBUAE6XF2JCUNYGJRSNHK2DPN556KROZMK5BJWXVTVLUDVH577GM77RHZP6MOM4CY7YTGWEJ74B2MYJSX63GVIX2J65AY"
+      },
+      "new": true
+    },
+    "request": {
+      "type": "IntentRequest",
+      "requestId": "EdwRequestId.8d73bea1-5c1f-40ff-a00f-4315a802f16e",
+      "locale": "en-US",
+      "timestamp": "2016-11-02T00:02:12Z",
+      "intent": {
+        "name": "GetNextList",
+        "slots": {}
+      }
+    },
+    "version": "1.0"
+  },
+  "end": {
+    "version": "1.0",
+    "session": {
+      "new": false,
+      "sessionId": "amzn1.echo-api.session.0000000-0000-0000-0000-00000000000",
+      "application": {
+        "applicationId": "amzn1.echo-sdk-ams.app.000000-d0ed-0000-ad00-000000d00ebe"
+      },
+      "attributes": {
+        "supportedHoroscopePeriods": {
+          "daily": true,
+          "weekly": false,
+          "monthly": false
+        }
+      },
+      "user": {
+        "userId": "amzn1.account.AM3B00000000000000000000000"
+      }
+    },
+    "context": {
+      "System": {
+        "application": {
+          "applicationId": "amzn1.echo-sdk-ams.app.000000-d0ed-0000-ad00-000000d00ebe"
+        },
+        "user": {
+          "userId": "amzn1.account.AM3B00000000000000000000000"
+        },
+        "device": {
+          "supportedInterfaces": {
+            "AudioPlayer": {}
+          }
+        }
+      },
+      "AudioPlayer": {
+        "offsetInMilliseconds": 0,
+        "playerActivity": "IDLE"
+      }
+    },
+    "request": {
+      "type": "SessionEndedRequest",
+      "requestId": "amzn1.echo-api.request.0000000-0000-0000-0000-00000000000",
+      "timestamp": "2015-05-13T12:34:56Z",
+      "reason": "USER_INITIATED",
+      "locale": "string"
+    }
+  }
+}
