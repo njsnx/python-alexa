@@ -1,7 +1,6 @@
 """Init py."""
 
 from functools import wraps
-import json
 
 
 class Alexa():
@@ -35,7 +34,6 @@ class Alexa():
 
             @wraps(f)
             def wrapper(*args, **kwds):
-                print("Hello")
                 return f()
 
         return decorator
@@ -62,7 +60,10 @@ class Session():
     def _get_attributes(self):
         """Get attributes."""
         if self.raw_session:
-            self.attributes = self.raw_session['attributes']
+            if 'attributes' in self.raw_session:
+                self.attributes = self.raw_session['attributes']
+            else:
+                self.attributes = {}
         else:
             self.self.attributes = self.raw_session
 
@@ -83,29 +84,51 @@ class Response():
         self.attributes = {}
         self.session = Session()
         self.final_response = {
-            "version": 1.0,
+            "version": "1.0",
             "shouldEndSession": False,
             "response": {}
         }
 
-    def statement(self, raw):
+    def statement(self, raw, style='ssml'):
         """Statement class."""
-        self.final_response['response']['outputSpeech'] = {
-            "type": "PlainText",
-            "text": raw
+        styles = {
+            "text": "PlainText",
+            "ssml": "SSML"
         }
-        self.final_response['response']['reprompt'] = {
-            "outputSpeech": {
-                "type": "PlainText",
-                "text": None
+        if style in styles.keys():
+
+            if style == 'ssml':
+                response = "<speak>{}</speak>".format(raw)
+            else:
+                response = raw
+
+            self.final_response['response']['outputSpeech'] = {
+                "type": styles[style],
+                style: response
             }
-        }
-        
+
+            self.final_response['response']['reprompt'] = {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": None
+                }
+            }
+
+            self.final_response['response']['card'] = {
+                "type": "Simple",
+                "title": "Test Case",
+                "content": "Hello world"
+            }
+        else:
+            self.final_response['response']['outputSpeech'] = {
+                "type": "PlainText",
+                "text": "There was was an issue. Sad face."
+            }
+
         return self.get_output()
 
     def set_attribute(self, key=None, value=None):
         """Set attributes."""
-        print "Hello"
         if key:
             self.attributes[key] = value
 
@@ -142,7 +165,10 @@ class Request():
             self.type = self.raw_request['type']
             if self.type == 'IntentRequest':
                 self.intent = self.raw_request['intent']['name']
-                self.slots = self.raw_request['intent']['slots']
+                if 'slots' in self.raw_request['intent'].keys():
+                    self.slots = self.raw_request['intent']['slots']
+                else:
+                    self.slots = {}
             else:
                 self.intent = self.raw_request['type']
         else:
