@@ -13,10 +13,7 @@ class Alexa():
         self.session = None
         self.response = Response(skill)
         self.session_attributes = {}
-        self._intent_mappings = {}
-        self.request = None
-        self.launch_func = None
-        self.end_func = None
+
     # def start_skill(self, app):
     #     """Start Skill method."""
     #     app.alexa = self
@@ -26,62 +23,17 @@ class Alexa():
         self.session = Session(raw)
         self.session_attributes = self.session.attributes
         self.request = Request(raw)
-
         """Route Request."""
-        if self.request.type == 'LaunchRequest':
-            return partial(self.launch_func)()
-        elif self.request.type == 'SessionEndedRequest':
-            return partial(self.end_func)()
-        elif self.request.type == 'IntentRequest':
-            args = self.map_slots_to_mapping()
-            if args:
-                return partial(
-                    self.functions[self.request.intent],
-                    self.session_attributes,
-                    **args
-                )()
-            else:
-                return partial(
-                    self.functions[self.request.intent],
-                    self.session_attributes
-                )()
 
-    def map_slots_to_mapping(self):
-        """Map slots to arguments."""
-        args = {}
-        mappings = self._intent_mappings[self.request.intent]
-        if mappings is not None and self.request.slots.keys() is not None:
-            for to, fr in self._intent_mappings[self.request.intent].items():
-                if fr in self.request.slots.keys():
-                    args[to] = self.request.slots[fr]
-                else:
-                    args[to] = None
-        return args
+        session_func = self.functions[self.request.intent]
+        print "hello"
+        return partial(session_func, self.request.args)()
 
-    def launch(self, f):
-        """Launch Intent."""
-        self.launch_func = f
-
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            f()
-        return f
-
-    def session_end(self, f):
-        """Launch Intent."""
-        self.end_func = f
-
-        @wraps(f)
-        def wrapper(*args, **kwargs):
-            f()
-        return f
-
-    def intent(self, name, mapping=None):
+    def intent(self, name):
         """Intent method."""
         def decorator(f):
 
             self.functions[name] = f
-            self._intent_mappings[name] = mapping
 
             @wraps(f)
             def wrapper(*args, **kwds):
@@ -112,10 +64,7 @@ class Session():
         """Get attributes."""
         if self.raw_session:
             if 'attributes' in self.raw_session:
-                if self.raw_session['attributes'] is not None:
-                    self.attributes = self.raw_session['attributes']
-                else:
-                    self.attributes = {}
+                self.attributes = self.raw_session['attributes']
             else:
                 self.attributes = {}
         else:
@@ -140,6 +89,7 @@ class Response():
         self.session = Session()
         self.final_response = {
             "version": "1.0",
+            "shouldEndSession": False,
             "response": {}
         }
 
@@ -185,7 +135,7 @@ class Response():
                 response = "<speak>{}</speak>".format(raw)
             else:
                 response = raw
-            self.final_response['response']['shouldEndSession'] = True
+
             self.final_response['response']['outputSpeech'] = {
                 "type": styles[style],
                 style: response
@@ -195,39 +145,6 @@ class Response():
                 "outputSpeech": {
                     "type": "PlainText",
                     "text": None
-                }
-            }
-
-        else:
-            self.final_response['response']['outputSpeech'] = {
-                "type": "PlainText",
-                "text": "There was was an issue. Sad face."
-            }
-
-        return self.get_output()
-
-    def question(self, raw, style='ssml'):
-        """Question method."""
-        styles = {
-            "text": "PlainText",
-            "ssml": "SSML"
-        }
-        if style in styles.keys():
-
-            if style == 'ssml':
-                response = "<speak>{}</speak>".format(raw)
-            else:
-                response = raw
-            self.final_response['response']['shouldEndSession'] = False
-            self.final_response['response']['outputSpeech'] = {
-                "type": styles[style],
-                style: response
-            }
-
-            self.final_response['response']['reprompt'] = {
-                "outputSpeech": {
-                    "type": "PlainText",
-                    "text": "How can I help?"
                 }
             }
 
@@ -280,10 +197,7 @@ class Request():
                 self.intent = self.raw_request['intent']['name']
                 if 'slots' in self.raw_request['intent'].keys():
                     self.slots = {}
-
-                    for k, slot in self.raw_request[
-                        'intent'
-                    ]['slots'].iteritems():
+                    for k, slot in self.raw_request['intent']['slots'].iteritems():
                         if 'value' in slot.keys():
                             self.slots[slot['name']] = slot['value']
                         else:

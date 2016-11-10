@@ -1,43 +1,134 @@
-"""Test py for Alexa library."""
-from alexa import Alexa, Response
+"""Chewing the Fat Quotes."""
+
+from alexa import Alexa
+import random
 import json
-import boto3
-alexa = Alexa('VoiceOps')
-r = Response()
+alexa = Alexa('Chewing the Fat')
+respond = alexa.response
 
 
 def lambda_handler(e, c):
-    """Handler."""
+    """Handler method."""
+    # print(json.dumps(e))
+
     return alexa.route(e)
 
 
-@alexa.intent("LaunchRequest")
+# @alexa.intent("LaunchRequest", mapping={"city": "Edinburgh"})
+@alexa.launch
 def launch():
-    """Launch intent."""
-    return r.statement(
-        "<p>Welcome to the end</p>\
-        <p>This is a test statment using the SSML</p>",
+    """Launch Intent."""
+    return(
+        respond.statement(
+            "<p><audio src=\"https://s3-eu-west-1.amazonaws.com"
+            "/njsnet-deployments/lambda/Alexa/chewin/sounds/chewin_intro.mp3\""
+            "/></p> <p>Welcome to chew-ing the Fat Quotes! Ya Dobber</p>"
+        )
     )
 
 
-@alexa.intent("HelloWorld")
-def hello_intent():
-    """Hello Intent."""
-    return("Hello")
+@alexa.session_end
+def session_end():
+    """Session end method."""
+    return (
+        respond.statement(
+            "Goodbye!"
+        )
+    )
+
+@alexa.intent("SessionEndedRequest", mapping={"city": "Edinburgh"})
+def close():
+    """Close method."""
+    return(respond.statement("Thank you for using Quotes!"))
 
 
-@alexa.intent("SessionEndedRequest")
-def end_session():
-    """End session."""
-    r.session.set_attribute('hello', 'neil')
-    return(r.statement("Good bye!"))
+@alexa.intent("GetQuote", mapping={"character": "character"})
+def get_quote(session, character):
+    """Get Quote Method."""
+    print character
 
+    """Get Quote intent."""
+    if 'last_quote' not in session.keys():
+        quotes = {
+            "teacher": [
+                "teacher_bag.mp3",
+                "teacher_neck_new.mp3"
+            ],
+            "the teacher": [
+                "teacher_bag.mp3",
+                "teacher_neck.mp3"
+            ],
+            "the big man": [
+                "bigman_counseller.mp3",
+                "bigman_fanny_baws.mp3",
+                "bigman_bike.mp3",
+                "bigman_pish.mp3"
+            ],
+            "big man": [
+                "bigman_counseller.mp3",
+                "bigman_fanny_baws.mp3",
+                "bigman_bike.mp3",
+                "bigman_pish.mp3"
+            ],
+            "ronald villes": [
+                "ronald_villes_zortal.mp3"
+            ],
+            "the actor": [
+                "ronald_villes_zortal.mp3"
+            ],
+            "actor": [
+                "ronald_villes_zortal.mp3"
+            ],
+            "random": [
+                "smell_shite_1.mp3",
+                "gonne_no_dae_that.mp3",
+                "smell_shite_2.mp3",
+                "simmer_down.mp3",
+                "random_psychic.mp3",
+                "bigman_counseller.mp3",
+                "bigman_fanny_baws.mp3",
+                "bigman_bike.mp3",
+                "bigman_pish.mp3",
+                "ronald_villes_zortal.mp3",
+                "teacher_bag.mp3",
+                "teacher_neck_new.mp3"
+            ]
+        }
+        c = random.choice(quotes.keys())
+        if character is not None:
+            c = character
+        else:
+            c = random.choice(quotes.keys())
 
-@alexa.intent("GetNextList")
-def get_next_intent():
-    """Hello Intent."""
-    # r.session.set_attribute('wow', 'hahahahaha')
-    return(r.statement("Hello there!", style='plain'))
+        quote = random.choice(quotes[c])
+        respond.session.set_attribute('last_quote', quote)
+        respond.card(
+            "How about this one by {}".format(c),
+            image={
+                "large": "https://s3-eu-west-1.amazonaws.com/njsnet-"
+                "deployments/lambda/Alexa/chewin/sounds/chewing_img.jpeg",
+                "small": "https://s3-eu-west-1.amazonaws.com/njsnet-"
+                "deployments/lambda/Alexa/chewin/sounds/chewing_img.jpeg"
+            }
+        )
+        return(
+            respond.statement(
+                "<p>How about this one by {}</p><p><audio src=\"https:"
+                "//s3-eu-west-1.amazonaws.com/njsnet-deployments/"
+                "lambda/Alexa/chewin/sounds/{}\" /></p>".format(
+                    c,
+                    quote
+                )
+            )
+        )
+
+    else:
+        return(
+            respond.statement(
+                """You've already had yir quote. Now piss aff"""
+            )
+        )
+
 
 if __name__ == "__main__":
 
@@ -54,24 +145,24 @@ if __name__ == "__main__":
 
     # print lambda_handler(data['launch'], 1)
 
-    test_lambda = True
+    test_lambda = False
 
     if test_lambda:
         r = c.invoke(
             FunctionName='lambda_skill_test',
             InvocationType='RequestResponse',
             Payload=json.dumps(
-                data['intent_get']
+                data['new_intent']
             )
         )
 
         print json.dumps(json.loads(r['Payload'].read()), indent=2)
     else:
-        print json.dumps(
-            lambda_handler(
-                data['intent_get'],
-                2
-            ),
-            indent=2
+        print(
+            json.dumps(
+                lambda_handler(
+                    data['chwin_session_cont'],
+                    2
+                ), indent=2
+            )
         )
-    # print lambda_handler(data['end'], 1)
