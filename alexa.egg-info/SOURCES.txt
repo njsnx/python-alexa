@@ -1,6 +1,5 @@
 setup.py
 alexa/__init__.py
-alexa/alexa.py
 alexa.egg-info/PKG-INFO
 alexa.egg-info/SOURCES.txt
 alexa.egg-info/dependency_links.txt

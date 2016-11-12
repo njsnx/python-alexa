@@ -53,6 +53,7 @@ class Alexa():
                     args[to] = self.request.slots[fr]
                 else:
                     args[to] = None
+            self.intent_and_slots[self.request.intent] = args
         return args
 
     def launch(self, f):

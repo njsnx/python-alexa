@@ -102,6 +102,7 @@ def get_quote(session, character):
 
         quote = random.choice(quotes[c])
         respond.session.set_attribute('last_quote', quote)
+        respond.hello()
         respond.card(
             "How about this one by {}".format(c),
             image={
@@ -145,7 +146,7 @@ if __name__ == "__main__":
 
     # print lambda_handler(data['launch'], 1)
 
-    test_lambda = False
+    test_lambda = True
 
     if test_lambda:
         r = c.invoke(

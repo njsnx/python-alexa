@@ -32,22 +32,30 @@ class Alexa():
             return partial(self.launch_func)()
         elif self.request.type == 'SessionEndedRequest':
             return partial(self.end_func)()
-        elif self.request.type == 'Intent':
+        elif self.request.type == 'IntentRequest':
             args = self.map_slots_to_mapping()
-            return partial(
-                self.functions[self.request.intent],
-                self.session_attributes,
-                **args
-            )()
+            if args:
+                return partial(
+                    self.functions[self.request.intent],
+                    self.session_attributes,
+                    **args
+                )()
+            else:
+                return partial(
+                    self.functions[self.request.intent],
+                    self.session_attributes
+                )()
 
     def map_slots_to_mapping(self):
         """Map slots to arguments."""
         args = {}
-        for to, fr in self._intent_mappings.items():
-            if fr in self.request.slots.keys():
-                args[to] = self.request.slots[fr]
-            else:
-                args[to] = None
+        mappings = self._intent_mappings[self.request.intent]
+        if mappings is not None and self.request.slots.keys() is not None:
+            for to, fr in self._intent_mappings[self.request.intent].items():
+                if fr in self.request.slots.keys():
+                    args[to] = self.request.slots[fr]
+                else:
+                    args[to] = None
         return args
 
     def launch(self, f):
@@ -68,12 +76,12 @@ class Alexa():
             f()
         return f
 
-    def intent(self, name, mapping):
+    def intent(self, name, mapping=None):
         """Intent method."""
         def decorator(f):
 
             self.functions[name] = f
-            self._intent_mappings = mapping
+            self._intent_mappings[name] = mapping
 
             @wraps(f)
             def wrapper(*args, **kwds):
@@ -104,9 +112,16 @@ class Session():
         """Get attributes."""
         if self.raw_session:
             if 'attributes' in self.raw_session:
-                self.attributes = self.raw_session['attributes']
+                if self.raw_session['attributes'] is not None:
+                    self.attributes = self.raw_session['attributes']
+                else:
+                    self.attributes = {}
             else:
                 self.attributes = {}
+
+            if 'user' in self.raw_session:
+                self.user = self.raw_session['user']
+
         else:
             self.self.attributes = self.raw_session
 
@@ -129,7 +144,6 @@ class Response():
         self.session = Session()
         self.final_response = {
             "version": "1.0",
-            "shouldEndSession": False,
             "response": {}
         }
 
@@ -175,7 +189,7 @@ class Response():
                 response = "<speak>{}</speak>".format(raw)
             else:
                 response = raw
-
+            self.final_response['response']['shouldEndSession'] = True
             self.final_response['response']['outputSpeech'] = {
                 "type": styles[style],
                 style: response
@@ -185,6 +199,39 @@ class Response():
                 "outputSpeech": {
                     "type": "PlainText",
                     "text": None
+                }
+            }
+
+        else:
+            self.final_response['response']['outputSpeech'] = {
+                "type": "PlainText",
+                "text": "There was was an issue. Sad face."
+            }
+
+        return self.get_output()
+
+    def question(self, raw, style='ssml'):
+        """Question method."""
+        styles = {
+            "text": "PlainText",
+            "ssml": "SSML"
+        }
+        if style in styles.keys():
+
+            if style == 'ssml':
+                response = "<speak>{}</speak>".format(raw)
+            else:
+                response = raw
+            self.final_response['response']['shouldEndSession'] = False
+            self.final_response['response']['outputSpeech'] = {
+                "type": styles[style],
+                style: response
+            }
+
+            self.final_response['response']['reprompt'] = {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": "How can I help?"
                 }
             }
 
@@ -220,6 +267,7 @@ class Request():
         self.type = None
         self.intent = None
         self.slots = None
+        self.user = None
         self.args = {}
 
         if "request" in raw.keys():
@@ -244,7 +292,7 @@ class Request():
                         if 'value' in slot.keys():
                             self.slots[slot['name']] = slot['value']
                         else:
-                            self.slots[slot['name']] = "None"
+                            self.slots[slot['name']] = None
                         # print slot
 
                     self.args['slots'] = self.slots
@@ -252,5 +300,6 @@ class Request():
                     self.slots = {}
             else:
                 self.intent = self.raw_request['type']
+
         else:
             self.attributes = self.raw_session
