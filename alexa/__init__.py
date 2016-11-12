@@ -17,9 +17,6 @@ class Alexa():
         self.request = None
         self.launch_func = None
         self.end_func = None
-    # def start_skill(self, app):
-    #     """Start Skill method."""
-    #     app.alexa = self
 
     def route(self, raw):
         """Route method."""
@@ -50,7 +47,7 @@ class Alexa():
         """Map slots to arguments."""
         args = {}
         mappings = self._intent_mappings[self.request.intent]
-        if mappings is not None and self.request.slots.keys() is not None:
+        if mappings is not None and len(self.request.slots.keys()) > 0:
             for to, fr in self._intent_mappings[self.request.intent].items():
                 if fr in self.request.slots.keys():
                     args[to] = self.request.slots[fr]
@@ -93,7 +90,6 @@ class Alexa():
         pass
 
 
-# End
 class Session():
     """Session class."""
 
@@ -118,6 +114,10 @@ class Session():
                     self.attributes = {}
             else:
                 self.attributes = {}
+
+            if 'user' in self.raw_session:
+                self.user = self.raw_session['user']
+
         else:
             self.self.attributes = self.raw_session
 
@@ -125,9 +125,6 @@ class Session():
         """Set attributes."""
         if key:
             self.attributes[key] = value
-
-
-# End
 
 
 class Response():
@@ -263,6 +260,7 @@ class Request():
         self.type = None
         self.intent = None
         self.slots = None
+        self.user = None
         self.args = {}
 
         if "request" in raw.keys():
@@ -295,5 +293,6 @@ class Request():
                     self.slots = {}
             else:
                 self.intent = self.raw_request['type']
+
         else:
             self.attributes = self.raw_session
