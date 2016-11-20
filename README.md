@@ -1,7 +1,19 @@
 # Python Alexa
-Simple Python library to make Alexa skill development in AWS Lambda super simple and easy.
+## First Release v1.0
 
-Inspired by flask-ask and some other libraries, this library includes features to make response building and request routing really easy.
+This is the first release of *alexa* so this release note will list some of the features it provides
+
+* Simple request routing
+* Simple Session management
+* Simple response crafting
+
+This module is aimed at those who want to worry about the cool things you can do with Alexa and Lambda rather than having to worry about how you get the data in or out too much.
+
+It is still recommended to use the Alexa Skills documentation to understand how to actually create a skill but this module will do the heavy lifting... or rather the tedious lifting for you.
+
+I am planning to make this module more robust by making the code more fail-safe as well as adding some extra features like Utterance generation and Intent Scheme generation
+
+Please let me know of bugs or feature requests in the Issues section
 
 ## Install
 Coming Soon
