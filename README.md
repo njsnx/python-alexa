@@ -1,4 +1,4 @@
-# alexa
+# Python Alexa
 Simple Python library to make Alexa skill development in AWS Lambda super simple and easy.
 
 Inspired by flask-ask and some other libraries, this library includes features to make response building and request routing really easy.
@@ -9,7 +9,7 @@ Coming Soon
 
 ## Usage
 ```python
-from pyalexa import Alexa
+from alexa import Alexa
 
 alexa = Alexa("Hello World") # Setup a object for the Alexa class
 response = alexa.response  # Use the Alexa response attribute to return responses
@@ -32,7 +32,7 @@ def get_hello(session, person):
 		response.session.set_attribute("previous", True)
 		return response.question("<p>Welcome</p><p>Hello AGAIN to you {}".format(name))
 	
-@alexa.session_end:
+@alexa.session_end
 def close():
 	return response.statement("Good bye")
 	
