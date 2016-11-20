@@ -16,8 +16,11 @@ I am planning to make this module more robust by making the code more fail-safe 
 Please let me know of bugs or feature requests in the Issues section
 
 ## Install
-Coming Soon
+##Install via pip
+`$ pip install git+ssh://github.com/nmyster/python-alexa.git`
 
+### Upgrade via pip
+`$ pip install git+ssh://github.com/nmyster/python-alexa.git - U`
 
 ## Usage
 ```python
