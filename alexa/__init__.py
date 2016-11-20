@@ -96,6 +96,7 @@ class Session():
     def __init__(self, raw=None):
         """Init method."""
         self.attributes = {}
+        self.user = None
         if raw is not None:
             if "session" in raw.keys():
                 self.raw_session = raw['session']
