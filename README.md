@@ -82,7 +82,7 @@ if __name__ == '__main__':
 ```
 
 ### Example Output
-* Launch Request*
+**Launch Request**
 ```
 {
   "version": "1.0", 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
 }
 ```
 
-* GetHello Intent *
+**GetHello Intent**
 ```
 {
   "version": "1.0", 
@@ -125,7 +125,7 @@ if __name__ == '__main__':
 }
 ````
 
-* End Session *
+**End Session**
 ```
 {
   "version": "1.0", 
