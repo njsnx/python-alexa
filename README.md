@@ -162,3 +162,7 @@ if __name__ == '__main__':
   }
 }
 ```
+
+# Acknowledgement 
+This module was inspired by the a Flask focused Alexa project at
+https://github.com/johnwheeler/flask-ask
