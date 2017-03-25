@@ -1,4 +1,4 @@
-"""Setup file for the WeatherStation python module."""
+"""Setup file for the Alexa Skill python module."""
 
 from setuptools import setup, find_packages
 
