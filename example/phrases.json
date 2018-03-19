@@ -1,0 +1,70 @@
+{
+  "phrases": {
+    "AMAZON.HelpIntent": {
+      "help": {
+        "default": [
+          "I can do many things for you. What would you like me to do?"
+        ]
+      }
+    },
+    "AMAZON.StopIntent": {
+      "afternoon": {
+        "default": [
+          "Good bye. Enjoy the rest of the day"
+        ]
+      },
+      "evening": {
+        "default": [
+          "Good bye. Have a nice evening"
+        ]
+      },
+      "morning": {
+        "default": [
+          "Good bye. Have a good day"
+        ]
+      },
+      "night": {
+        "default": [
+          "Good bye. Have a good night"
+        ]
+      }
+    },
+    "GetFacts": {
+      "fact": {
+        "default": "How about this amazing fact! {fact}"
+      }
+    },
+    "general": {
+      "afternoon": {
+        "default": [
+          "Good afternoon"
+        ]
+      },
+      "evening": {
+        "default": [
+          "Good evening"
+        ]
+      },
+      "login": {
+        "default": "Please login to your account. Check out my amazing app"
+      },
+      "morning": {
+        "default": [
+          "Good morning"
+        ]
+      },
+      "night": {
+        "default": [
+          "Hello"
+        ]
+      }
+    },
+    "launch": {
+      "intro": {
+        "default": [
+          "<p>{timeOfDayGreeting}, Welcome to Sexy Facts. Did you know {fact}?</p>"
+        ]
+      }
+    }
+  }
+}

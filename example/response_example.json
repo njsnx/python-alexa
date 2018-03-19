@@ -1,7 +1,7 @@
 {
   "version": "string",
   "sessionAttributes": {
-    "string": object
+    "string": "object"
   },
   "response": {
     "outputSpeech": {
