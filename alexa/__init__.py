@@ -1,6 +1,9 @@
 """Init py."""
 
 from functools import wraps, partial
+import re, itertools
+import json
+import requests
 
 
 class Alexa():
@@ -18,7 +21,7 @@ class Alexa():
         self.launch_func = None  # Which function is associated with the LaunchRequest
         self.end_func = None  # The function associated with the SessionEndRequest
 
-    def route(self, raw):
+    def route(self, raw, test=False):
         """Route method.
 
         This methd deals with routing the raw request to the correct function
@@ -29,6 +32,12 @@ class Alexa():
         self.session = Session(raw)  # Get a session object from the Session class, passing in the raw request
         self.session_attributes = self.session.attributes  # Set the session_attribute attribute to the attributes in the session
         self.request = Request(raw)  # Set the request attribute to a Request object - passing in the raw request
+
+        if test:
+            self.session.location = {
+                "postalCode": "WC1X 8BZ",
+                "city": "London"
+            }
 
         """Route Request."""
         # Depending on the request type, get the correct function
@@ -66,8 +75,14 @@ class Alexa():
 
             # If there is, loop through them
             for to, fr in self._intent_mappings[self.request.intent].items():
-                if fr in self.request.slots.keys():  # Check if the current slot has a mapping
-                    args[to] = self.request.slots[fr]  # Add a key to the args dict setting it to the value of the slot
+
+                if type(fr) is str:
+                    from_name= fr
+                else:
+                    from_name = fr['name']
+
+                if from_name in self.request.slots.keys():  # Check if the current slot has a mapping
+                    args[to] = self.request.slots[from_name]  # Add a key to the args dict setting it to the value of the slot
                 else:
                     args[to] = None  # If there isn't a value for that slot, set it to None
 
@@ -106,7 +121,105 @@ class Alexa():
                 return f()
 
         return decorator  # Retrun wrapped function.
+    def load_utterances(self, file=None, flat=False):
 
+        with open(file) as ut:
+            utterances = json.load(ut)
+
+        utterances = self.generate_utterances(utterances)
+
+        if flat:
+            to_return = ""
+            for intent, phrases in utterances.items():
+        #
+                for k, utterances in phrases.items():
+                    # print k, utterances
+                    for utterance in utterances:
+                        # for phrase in phrases
+                        to_return += "{} {}\n".format(intent, utterance)
+            return to_return
+        return utterances
+
+
+    # def load_utterances(self, input=None):
+
+    #     return self.generate_utterances(input)
+
+    def generate_utterances(self, utterances):
+
+        p = re.compile("\[([^\]]+)\]")
+
+        completed_utterances = {}
+
+        for intent, phrases in utterances.items():
+            completed_utterances[intent] = {}
+            for i, phrase in enumerate(phrases):
+                completed_utterances[intent]["phrase{}".format(i)] = []
+                phrase_dict = {}
+                x = 0
+                for m in p.finditer(phrase):
+                    phrase_dict["match{}".format(x)] = {
+                        "match": m.group(),
+                        "options": []
+                    }
+                    phrase = phrase.replace(m.group(), "((match" + str(x) + "))")
+
+                    phrase_dict["match{}".format(x)] = m.group()[1:-1].split(',')
+
+                    x += 1
+                lsources = re.findall("\(\((.*?)\)\)", phrase)
+                ldests = []
+                for source in lsources:
+                    ldests.append(phrase_dict[source])
+
+                for lproduct in itertools.product(*ldests):
+                    output = phrase
+                    for src, dest in itertools.izip(lsources, lproduct):
+                        output = output.replace("((%s))" % src, dest)
+
+                    completed_utterances[intent]["phrase{}".format(i)].append(output)
+        return completed_utterances
+
+    def generate_skill_config(self):
+
+        message = "INTENT SCHEMA\n"
+        message += json.dumps(self.get_intents(), indent=2)
+        message += "\n\nUTTERANCES\n"
+        message += self.load_utterances('./utterances.json', flat=True)
+
+        return message
+
+    def get_intents(self):
+        map = {
+            "intents":[]
+        }
+        x = 0 
+        for intent_name, mappings in self._intent_mappings.items():
+
+            intent_map = {
+                "intent": intent_name
+            }
+            if self._intent_mappings[intent_name]:
+                intent_map['slots'] = []
+
+                for var, slot in mappings.items():
+
+                    if type(slot) is str:
+                        slot_name = slot
+                        slot_type = "SLOT_TYPE_NOT_SET"
+                    else:
+                        slot_name = slot['name']
+                        slot_type = slot['type']
+
+                    intent_map['slots'].append(
+                        {
+                            "name": slot_name,
+                            "type": slot_type
+
+                        }
+                    )
+            map['intents'].append(intent_map)
+        return map
 
 class Session():
     """Session class.
@@ -122,6 +235,12 @@ class Session():
         if raw is not None:  # Confirm a event has been passed in
             if "session" in raw.keys():  # Check if the event has a session key
                 self.raw_session = raw['session']  # If it does, set a raw_session attribue to the value of the event's session objet
+
+                self.context = raw.get('context',None)
+                if self.context:
+
+                    self.device_id = self.context['System']['device']['deviceId']
+
             else:
                 self.raw_session = raw  # If not, assume the whole event is a session and set the raw_Session to the whole event
 
@@ -145,6 +264,10 @@ class Session():
             # Check if there is a user key in the raw session
             if 'user' in self.raw_session:
                 self.user = self.raw_session['user']  # If there is, set class user attribute to the value of the session object
+                if 'permissions' in self.user:
+                    if self.user['permissions']:
+                        self.permissions = self.user['permissions']
+                        self.get_user_location()
         else:
             self.self.attributes = self.raw_session  # If there is no attributes key, assume of the raw_session is the attributes dict
 
@@ -158,6 +281,30 @@ class Session():
             self.attributes[key] = value  # Set the value of the attribute key to the key value
 
 
+    def get_user_location(self):
+        """Update user location in Dynamo and Session."""
+        if self.permissions:
+            # if it is, check if we have a consent token
+            if 'consentToken' in self.permissions:
+                token = self.permissions['consentToken'] # Get token from the session
+
+                # Create headers for the address API
+                headers = {
+                    "Authorization": "Bearer {}".format(token)
+                }
+
+                # Setup request to the Alexa Address api passing in Device Id and headers
+                response = requests.get(
+                    'https://api.eu.amazonalexa.com/v1/devices/{}/settings/address'.format(
+                        self.device_id
+                    ),
+                    headers=headers
+                )
+
+            self.location = json.loads(response.text)  # Get the location from the response
+            return self.location
+
+        return None
 class Response():
     """Response class."""
 
@@ -171,7 +318,7 @@ class Response():
             "response": {}
         }
 
-    def card(self, text, image=None):
+    def card(self, text,title=None, image=None, permissions=None):
         """Create a card response.
 
         Allows a card to be sent as part of the response. This will show up in the users Alexa app
@@ -181,6 +328,19 @@ class Response():
         Additionally, you can pass in a dict with small and large as keys with alternate URLs
         """
         # If image is set
+        if not title:
+            title = self.skill_title
+
+        if permissions is not None:
+            self.final_response['response']['card'] = {
+                "type": "AskForPermissionsConsent",
+                "permissions": [
+                    "read::alexa:device:all:address"
+                ]
+            }
+
+            return self.final_response
+
         if image:
             card_img = {}  # Create empty image dict for the respone
             if type(image) is dict:  # Check if the image argument was a dict
@@ -198,7 +358,7 @@ class Response():
             # set the response card value to the values in the image_carg
             self.final_response['response']['card'] = {
                 "type": "Standard",
-                "title": self.skill_title,
+                "title": title,
                 "text": text,
                 "image": card_img
             }
@@ -207,7 +367,7 @@ class Response():
             # Create a response card object reflective of no image being se
             self.final_response['response']['card'] = {
                 "type": "Simple",  # Card type
-                "title": self.skill_title,  # Card title
+                "title": title,  # Card title
                 "content": text  # Content dict
             }
 
@@ -311,7 +471,6 @@ class Response():
         """Set session method."""
         if bool(self.session.attributes):  # Check if session attributes is set
             self.final_response['sessionAttributes'] = session.attributes  # Add sesison attributes to final response
-
 
 class Request():
     """Request class."""
