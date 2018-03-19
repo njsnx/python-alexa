@@ -318,7 +318,7 @@ class Response():
             "response": {}
         }
 
-    def card(self, text, image=None, permissions=None):
+    def card(self, text,title=None, image=None, permissions=None):
         """Create a card response.
 
         Allows a card to be sent as part of the response. This will show up in the users Alexa app
@@ -328,6 +328,8 @@ class Response():
         Additionally, you can pass in a dict with small and large as keys with alternate URLs
         """
         # If image is set
+        if not title:
+            title = self.skill_title
 
         if permissions is not None:
             self.final_response['response']['card'] = {
@@ -356,7 +358,7 @@ class Response():
             # set the response card value to the values in the image_carg
             self.final_response['response']['card'] = {
                 "type": "Standard",
-                "title": self.skill_title,
+                "title": title,
                 "text": text,
                 "image": card_img
             }
@@ -365,7 +367,7 @@ class Response():
             # Create a response card object reflective of no image being se
             self.final_response['response']['card'] = {
                 "type": "Simple",  # Card type
-                "title": self.skill_title,  # Card title
+                "title": title,  # Card title
                 "content": text  # Content dict
             }
 
