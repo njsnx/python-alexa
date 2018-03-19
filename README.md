@@ -1,11 +1,16 @@
 # Python Alexa
-## First Release v1.0
+## First Release v1.5
 
-This is the first release of *alexa* so this release note will list some of the features it provides
+This is the second release of my *alexa* library this release note will list some of the features it provides
 
 * Simple request routing
+* Get User Location
+* Creat custom cards
+* Work with Dialog Directives
 * Simple Session management
 * Simple response crafting
+* Utterance Generation using in-code configuration
+* Phrase loading - Allows easy integration of multi-language support using a simple JSON configuration file
 
 This module is aimed at those who want to worry about the cool things you can do with Alexa and Lambda rather than having to worry about how you get the data in or out too much.
 
@@ -16,7 +21,7 @@ I am planning to make this module more robust by making the code more fail-safe 
 Please let me know of bugs or feature requests in the Issues section
 
 ## Install
-##Install via pip
+## Install via pip
 `$ pip install git+ssh://github.com/nmyster/python-alexa.git`
 
 ### Upgrade via pip
@@ -117,6 +122,7 @@ if __name__ == '__main__':
 }
 ```
 
+
 **GetHello Intent**
 ```
 {
@@ -138,7 +144,7 @@ if __name__ == '__main__':
     "previous": true
   }
 }
-````
+```
 
 **End Session**
 ```

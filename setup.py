@@ -1,5 +1,5 @@
 """Setup file for the Alexa Skill python module."""
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name='alexa',
@@ -11,5 +11,5 @@ setup(
     test_suite='tests',
     # package_data={'PythonAlexa': ['tag_config.yaml']},
     packages=find_packages(exclude=['docs', 'tests', 'contrib']),
-    install_requires=['boto3']
+    install_requires=['boto3', 'requests']
 )
