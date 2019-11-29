@@ -95,7 +95,8 @@ class Alexa():
         """
         args = {}  # Start an empty dict to store arguments
 
-        mappings = self._intent_mappings[self.current_intent]  # Set mappings to the dict of the decorator mapping argumnet
+        # Set mappings to the dict of the decorator mapping argumnet
+        mappings = self._intent_mappings[self.current_intent]
         print(mappings)
         # Check there is a mapping value and that there is at least 1 key to work with
         if mappings is not None:
@@ -109,7 +110,8 @@ class Alexa():
                     from_name = fr['name']
 
                 if self.request.slots and from_name in self.request.slots.keys():  # Check if the current slot has a mapping
-                    args[to] = self.request.slots[from_name]  # Add a key to the args dict setting it to the value of the slot
+                    # Add a key to the args dict setting it to the value of the slot
+                    args[to] = self.request.slots[from_name]
                 else:
                     args[to] = Slot({'name': to, 'value': None})  # If there isn't a value for that slot, set it to None
 
@@ -199,14 +201,14 @@ class Alexa():
                 for source in lsources:
                     ldests.append(phrase_dict[source])
 
-                for lproduct in itertools.product(*ldests):
-                    output = phrase
-                    for src, dest in itertools.izip(lsources, lproduct):
-                        output = output.replace("((%s))" % src, dest)
+                # for lproduct in itertools.product(*ldests):
+                #     output = phrase
+                #     for src, dest in itertools.izip(lsources, lproduct):
+                #         output = output.replace("((%s))" % src, dest)
 
-                    completed_utterances[intent]["phrase{}".format(i)].append(
-                        output
-                    )
+                #     completed_utterances[intent]["phrase{}".format(i)].append(
+                #         output
+                #     )
 
         return completed_utterances
 
@@ -300,12 +302,13 @@ class Session():
 
         if raw is not None:  # Confirm a event has been passed in
             if "session" in raw.keys():  # Check if the event has a session key
-                self.raw_session = raw['session']  # If it does, set a raw_session attribue to the value of the event's session objet
+                # If it does, set a raw_session attribue to the value of the event's session objet
+                self.raw_session = raw['session']
 
                 self.context = raw.get('context', None)
-                if self.context:
+                # if self.context:
 
-                    self.device_id = self.context['System']['device']['deviceId']
+                #     self.device_id = self.context['System']['device']['deviceId']
 
             else:
                 self.raw_session = raw  # If not, assume the whole event is a session and set the raw_Session to the whole event
@@ -321,7 +324,8 @@ class Session():
         if self.raw_session:  # Check if there is a raw session value
             if 'attributes' in self.raw_session:  # See if the raw session has n attributes key
                 if self.raw_session['attributes'] is not None:  # Check if the attributes key is not empty/None
-                    self.attributes = self.raw_session['attributes']  # Set the attributes class attribute to the value of the session attributes
+                    # Set the attributes class attribute to the value of the session attributes
+                    self.attributes = self.raw_session['attributes']
                 else:
                     self.attributes = {}  # If there is an empty attributes key, set class attributes attribute to an empty dict
             else:
@@ -329,13 +333,14 @@ class Session():
 
             # Check if there is a user key in the raw session
             if 'user' in self.raw_session:
-                self.user = self.raw_session['user']  # If there is, set class user attribute to the value of the session object
+                # If there is, set class user attribute to the value of the session object
+                self.user = self.raw_session['user']
                 if 'permissions' in self.user:
                     if self.user['permissions']:
                         self.permissions = self.user['permissions']
                         self.get_user_location()
         else:
-            self.self.attributes = self.raw_session  # If there is no attributes key, assume of the raw_session is the attributes dict
+            self.attributes = self.raw_session  # If there is no attributes key, assume of the raw_session is the attributes dict
 
     def set_attribute(self, key=None, value=None):
         """Set attributes.
@@ -359,14 +364,14 @@ class Session():
                 }
 
                 # Setup request to the Alexa Address api passing in Device Id and headers
-                response = requests.get(
-                    'https://api.eu.amazonalexa.com/v1/devices/{}/settings/address'.format(
-                        self.device_id
-                    ),
-                    headers=headers
-                )
+                # response = requests.get(
+                #     'https://api.eu.amazonalexa.com/v1/devices/{}/settings/address'.format(
+                #         self.device_id
+                #     ),
+                #     headers=headers
+                # )
 
-            self.location = json.loads(response.text)  # Get the location from the response
+            # self.location = json.loads(response.text)  # Get the location from the response
             return self.location
 
         return None
@@ -461,7 +466,8 @@ class Response():
                 response = "<speak>{}</speak>".format(raw)  # Response is surrounded by speak tags to make it SSML
             else:
                 response = raw  # Else the Response is just the input of raw
-            self.final_response['response']['shouldEndSession'] = True  # End session set to True as this is a statement, not a question
+            # End session set to True as this is a statement, not a question
+            self.final_response['response']['shouldEndSession'] = True
 
             # Create outputspeech dict with response and styl
             self.final_response['response']['outputSpeech'] = {
@@ -487,7 +493,6 @@ class Response():
         return self.get_output()  # Get the output and return it
 
     def confirm(self, raw, slot, intent, style='ssml'):
-
         """Statement class.
 
         Used to return a response that doesn't expect further input
@@ -504,7 +509,8 @@ class Response():
                 response = "<speak>{}</speak>".format(raw)  # Response is surrounded by speak tags to make it SSML
             else:
                 response = raw  # Else the Response is just the input of raw
-            self.final_response['response']['shouldEndSession'] = True  # End session set to True as this is a statement, not a question
+            # End session set to True as this is a statement, not a question
+            self.final_response['response']['shouldEndSession'] = True
 
             # Create outputspeech dict with response and styl
             self.final_response['response']['outputSpeech'] = {
@@ -538,7 +544,6 @@ class Response():
         return self.get_output()  # Get the output and return it
 
     def ellicit_dialog(self, raw, slot, intent, style='ssml'):
-
         """Statement class.
 
         Used to return a response that doesn't expect further input
@@ -555,7 +560,8 @@ class Response():
                 response = "<speak>{}</speak>".format(raw)  # Response is surrounded by speak tags to make it SSML
             else:
                 response = raw  # Else the Response is just the input of raw
-            self.final_response['response']['shouldEndSession'] = True  # End session set to True as this is a statement, not a question
+            # End session set to True as this is a statement, not a question
+            self.final_response['response']['shouldEndSession'] = True
 
             # Create outputspeech dict with response and styl
             self.final_response['response']['outputSpeech'] = {
@@ -589,7 +595,6 @@ class Response():
         return self.get_output()  # Get the output and return it
 
     def dialog(self):
-
         """Dialog Method.
 
         Used to return a A Dialog Delegate directive
@@ -620,7 +625,8 @@ class Response():
                 response = "<speak>{}</speak>".format(raw)  # Response is surrounded by speak tags to make it SSML
             else:
                 response = raw  # Else the Response is just the input of raw
-            self.final_response['response']['shouldEndSession'] = False  # End session set to False as this is a question, expecting further input
+            # End session set to False as this is a question, expecting further input
+            self.final_response['response']['shouldEndSession'] = False
             self.final_response['response']['outputSpeech'] = {
                 "type": styles[style],  # Style value is value from styles dict using passed in style argument
                 style: response  # Set key to the style passed in and the response as the value
@@ -762,12 +768,13 @@ class Request():
                     # Loop through each slot in the request
                     for k, slot in self.raw_request[
                         'intent'
-                    ]['slots'].iteritems():
+                    ]['slots'].items():
                         self.slots[slot['name']] = Slot(slot)
 
                     self.args['slots'] = self.slots  # Set the object args slots key to the slots
             else:
-                self.intent = Intent({}, self.raw_request['type'])  # Set intent to request ype if it is not IntentRequest
+                # Set intent to request ype if it is not IntentRequest
+                self.intent = Intent({}, self.raw_request['type'])
 
         else:
             self.attributes = self.raw_session  # Set attributes to the raw session if no raw_request
