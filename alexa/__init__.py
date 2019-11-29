@@ -1,8 +1,13 @@
 """Init py."""
 
-from functools import wraps, partial
-import re, itertools
+import itertools
 import json
+import random
+import re
+
+from datetime import datetime
+from functools import partial, wraps
+
 import requests
 
 
@@ -21,7 +26,7 @@ class Alexa():
         self.launch_func = None  # Which function is associated with the LaunchRequest
         self.end_func = None  # The function associated with the SessionEndRequest
 
-    def route(self, raw, test=False):
+    def route(self, raw, test=False, phrases=False):
         """Route method.
 
         This methd deals with routing the raw request to the correct function
@@ -31,8 +36,11 @@ class Alexa():
         """
         self.session = Session(raw)  # Get a session object from the Session class, passing in the raw request
         self.session_attributes = self.session.attributes  # Set the session_attribute attribute to the attributes in the session
+
         self.request = Request(raw)  # Set the request attribute to a Request object - passing in the raw request
 
+        if phrases:
+            self.phrases = self.load_phrases(phrases)
         if test:
             self.session.location = {
                 "postalCode": "WC1X 8BZ",
@@ -46,20 +54,38 @@ class Alexa():
         elif self.request.type == 'SessionEndedRequest':
             return partial(self.end_func)()  # SessionEndRequest funciton
         elif self.request.type == 'IntentRequest':  # Intent Function
+            self.current_intent = self.request.intent.name
             args = self.map_slots_to_mapping()  # Get the arguments to pass in based on mapping parameter to the decorator
             if args:  # Check if there is any args
                 # Return the result of the matched function, passing in the sesison as well as the slot mappings as arguments
                 return partial(
-                    self.functions[self.request.intent],
-                    self.session_attributes,
+                    self.functions[self.current_intent],
+                    self.session,
                     **args
                 )()
             else:  # If no arguments to map
                 # call the matched function with the correct session but no slot -> arguments
                 return partial(
-                    self.functions[self.request.intent],
-                    self.session_attributes
+                    self.functions[self.current_intent],
+                    self.session
                 )()
+
+    def assume_intent(self, intent_name):
+        self.current_intent = intent_name
+        args = self.map_slots_to_mapping()  # Get the arguments to pass in based on mapping parameter to the decorator
+        if args:  # Check if there is any args
+            # Return the result of the matched function, passing in the sesison as well as the slot mappings as arguments
+            return partial(
+                self.functions[self.current_intent],
+                self.session,
+                **args
+            )()
+        else:  # If no arguments to map
+            # call the matched function with the correct session but no slot -> arguments
+            return partial(
+                self.functions[self.current_intent],
+                self.session
+            )()
 
     def map_slots_to_mapping(self):
         """Map slots to arguments.
@@ -68,23 +94,24 @@ class Alexa():
 
         """
         args = {}  # Start an empty dict to store arguments
-        mappings = self._intent_mappings[self.request.intent]  # Set mappings to the dict of the decorator mapping argumnet
 
+        mappings = self._intent_mappings[self.current_intent]  # Set mappings to the dict of the decorator mapping argumnet
+        print(mappings)
         # Check there is a mapping value and that there is at least 1 key to work with
-        if mappings is not None and len(self.request.slots.keys()) > 0:
+        if mappings is not None:
 
             # If there is, loop through them
-            for to, fr in self._intent_mappings[self.request.intent].items():
+            for to, fr in self._intent_mappings[self.current_intent].items():
 
                 if type(fr) is str:
-                    from_name= fr
+                    from_name = fr
                 else:
                     from_name = fr['name']
 
-                if from_name in self.request.slots.keys():  # Check if the current slot has a mapping
+                if self.request.slots and from_name in self.request.slots.keys():  # Check if the current slot has a mapping
                     args[to] = self.request.slots[from_name]  # Add a key to the args dict setting it to the value of the slot
                 else:
-                    args[to] = None  # If there isn't a value for that slot, set it to None
+                    args[to] = Slot({'name': to, 'value': None})  # If there isn't a value for that slot, set it to None
 
         return args  # Return the args dict
 
@@ -121,6 +148,7 @@ class Alexa():
                 return f()
 
         return decorator  # Retrun wrapped function.
+
     def load_utterances(self, file=None, flat=False):
 
         with open(file) as ut:
@@ -131,7 +159,7 @@ class Alexa():
         if flat:
             to_return = ""
             for intent, phrases in utterances.items():
-        #
+
                 for k, utterances in phrases.items():
                     # print k, utterances
                     for utterance in utterances:
@@ -139,11 +167,6 @@ class Alexa():
                         to_return += "{} {}\n".format(intent, utterance)
             return to_return
         return utterances
-
-
-    # def load_utterances(self, input=None):
-
-    #     return self.generate_utterances(input)
 
     def generate_utterances(self, utterances):
 
@@ -162,9 +185,13 @@ class Alexa():
                         "match": m.group(),
                         "options": []
                     }
-                    phrase = phrase.replace(m.group(), "((match" + str(x) + "))")
+                    phrase = phrase.replace(
+                        m.group(), "((match" + str(x) + "))"
+                    )
 
-                    phrase_dict["match{}".format(x)] = m.group()[1:-1].split(',')
+                    phrase_dict["match{}".format(x)] = m.group()[1:-1].split(
+                        ','
+                    )
 
                     x += 1
                 lsources = re.findall("\(\((.*?)\)\)", phrase)
@@ -177,7 +204,10 @@ class Alexa():
                     for src, dest in itertools.izip(lsources, lproduct):
                         output = output.replace("((%s))" % src, dest)
 
-                    completed_utterances[intent]["phrase{}".format(i)].append(output)
+                    completed_utterances[intent]["phrase{}".format(i)].append(
+                        output
+                    )
+
         return completed_utterances
 
     def generate_skill_config(self):
@@ -191,9 +221,9 @@ class Alexa():
 
     def get_intents(self):
         map = {
-            "intents":[]
+            "intents": []
         }
-        x = 0 
+
         for intent_name, mappings in self._intent_mappings.items():
 
             intent_map = {
@@ -221,6 +251,42 @@ class Alexa():
             map['intents'].append(intent_map)
         return map
 
+    def load_phrases(self, file):
+        return Phrases(self.request.locale, file)
+
+
+class Phrases():
+
+    def __init__(self, locale, phrase_file):
+
+        self.locale = locale
+        self.load_phrase_file(phrase_file)
+
+    def load_phrase_file(self, file):
+
+        with open(file) as f:
+            self.phrases = json.load(f)
+        self.phrases = self.phrases['phrases']
+
+    def load_phrase(self, phrase_section, phrase_key, **string_args):
+
+        section = self.phrases[phrase_section]
+        phrase_variations = section[phrase_key]
+
+        if self.locale in phrase_variations.keys():
+            phrase = phrase_variations[self.locale]
+        else:
+            phrase = phrase_variations['default']
+
+        if type(phrase) is list:
+            return random.choice(phrase).format(**string_args)
+
+        return phrase.format(**string_args)
+
+    def phrase(self, phrase_section, phrase_key, **string_args):
+        return self.load_phrase(phrase_section, phrase_key, **string_args)
+
+
 class Session():
     """Session class.
 
@@ -236,7 +302,7 @@ class Session():
             if "session" in raw.keys():  # Check if the event has a session key
                 self.raw_session = raw['session']  # If it does, set a raw_session attribue to the value of the event's session objet
 
-                self.context = raw.get('context',None)
+                self.context = raw.get('context', None)
                 if self.context:
 
                     self.device_id = self.context['System']['device']['deviceId']
@@ -275,18 +341,17 @@ class Session():
         """Set attributes.
 
         Used to set attribute values to send back to the Echo/Alexa
-        Takes in a ket and a value to set
+        Takes in a key and a value to set
         """
         if key:  # If the key is not none
             self.attributes[key] = value  # Set the value of the attribute key to the key value
-
 
     def get_user_location(self):
         """Update user location in Dynamo and Session."""
         if self.permissions:
             # if it is, check if we have a consent token
             if 'consentToken' in self.permissions:
-                token = self.permissions['consentToken'] # Get token from the session
+                token = self.permissions['consentToken']  # Get token from the session
 
                 # Create headers for the address API
                 headers = {
@@ -305,6 +370,8 @@ class Session():
             return self.location
 
         return None
+
+
 class Response():
     """Response class."""
 
@@ -318,7 +385,12 @@ class Response():
             "response": {}
         }
 
-    def card(self, text,title=None, image=None, permissions=None):
+    def link_account(self):
+        self.final_response['response']['card'] = {
+            "type": "LinkAccount"
+        }
+
+    def card(self, text, title=None, image=None, permissions=None,):
         """Create a card response.
 
         Allows a card to be sent as part of the response. This will show up in the users Alexa app
@@ -411,6 +483,126 @@ class Response():
                 "type": "PlainText",
                 "text": "There was was an issue. Sad face."
             }
+        self.final_response['response']['directives'] = None
+        return self.get_output()  # Get the output and return it
+
+    def confirm(self, raw, slot, intent, style='ssml'):
+
+        """Statement class.
+
+        Used to return a response that doesn't expect further input
+        """
+        styles = {
+            "text": "PlainText",  # Response type PlainText
+            "ssml": "SSML"  # Response type SSML
+        }
+
+        # Check if the style argument is in the styles dict
+        if style in styles.keys():
+
+            if style == 'ssml':  # If the style is SSML
+                response = "<speak>{}</speak>".format(raw)  # Response is surrounded by speak tags to make it SSML
+            else:
+                response = raw  # Else the Response is just the input of raw
+            self.final_response['response']['shouldEndSession'] = True  # End session set to True as this is a statement, not a question
+
+            # Create outputspeech dict with response and styl
+            self.final_response['response']['outputSpeech'] = {
+                "type": styles[style],  # Style value is value from styles dict using passed in style argument
+                style: response  # Set key to the style passed in and the response as the value
+            }
+
+            # Set Repromt dict to None
+            self.final_response['response']['reprompt'] = {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": None
+                }
+            }
+
+        else:
+            # If the style is invalid, return a sad face response
+            self.final_response['response']['outputSpeech'] = {
+                "type": "PlainText",
+                "text": "There was was an issue. Sad face."
+            }
+
+        self.final_response['response']['directives'] = [
+            {
+                "type": "Dialog.ConfirmSlot",
+                "slotToConfirm": slot,
+                "updatedIntent": intent.to_json()
+            }
+        ]
+        self.final_response['response']['shouldEndSession'] = False
+        return self.get_output()  # Get the output and return it
+
+    def ellicit_dialog(self, raw, slot, intent, style='ssml'):
+
+        """Statement class.
+
+        Used to return a response that doesn't expect further input
+        """
+        styles = {
+            "text": "PlainText",  # Response type PlainText
+            "ssml": "SSML"  # Response type SSML
+        }
+
+        # Check if the style argument is in the styles dict
+        if style in styles.keys():
+
+            if style == 'ssml':  # If the style is SSML
+                response = "<speak>{}</speak>".format(raw)  # Response is surrounded by speak tags to make it SSML
+            else:
+                response = raw  # Else the Response is just the input of raw
+            self.final_response['response']['shouldEndSession'] = True  # End session set to True as this is a statement, not a question
+
+            # Create outputspeech dict with response and styl
+            self.final_response['response']['outputSpeech'] = {
+                "type": styles[style],  # Style value is value from styles dict using passed in style argument
+                style: response  # Set key to the style passed in and the response as the value
+            }
+
+            # Set Repromt dict to None
+            self.final_response['response']['reprompt'] = {
+                "outputSpeech": {
+                    "type": "PlainText",
+                    "text": None
+                }
+            }
+
+        else:
+            # If the style is invalid, return a sad face response
+            self.final_response['response']['outputSpeech'] = {
+                "type": "PlainText",
+                "text": "There was was an issue. Sad face."
+            }
+
+        self.final_response['response']['directives'] = [
+            {
+                "type": "Dialog.ElicitSlot",
+                "slotToElicit": slot,
+                "updatedIntent": intent.to_json()
+            }
+        ]
+        self.final_response['response']['shouldEndSession'] = False
+        return self.get_output()  # Get the output and return it
+
+    def dialog(self):
+
+        """Dialog Method.
+
+        Used to return a A Dialog Delegate directive
+        """
+
+        self.final_response['response'] = {
+            'shouldEndSession': False,
+            'directives': [
+                {
+                    "type": "Dialog.Delegate"
+                }
+            ]
+        }
 
         return self.get_output()  # Get the output and return it
 
@@ -447,7 +639,7 @@ class Response():
                 "type": "PlainText",
                 "text": "There was was an issue. Sad face."
             }
-
+        self.final_response['response']['directives'] = None
         # Get the output and return it
         return self.get_output()
 
@@ -472,6 +664,52 @@ class Response():
         if bool(self.session.attributes):  # Check if session attributes is set
             self.final_response['sessionAttributes'] = session.attributes  # Add sesison attributes to final response
 
+
+class Intent():
+
+    def __init__(self, raw, type):
+
+        self.raw = raw
+        self.type = type
+
+        if raw:
+            self.slots = raw.get('slots', None)
+            self.name = raw['name']
+            self.confirmed = raw['confirmationStatus']
+
+            if self.confirmed.lower() == "none":
+                self.confirmed = None
+            elif self.confirmed.lower() == "denied":
+                self.confirmed = False
+            elif self.confirmed.lower() == "confirmed":
+                self.confirmed = True
+
+    def to_json(self):
+        return self.raw
+
+
+class Slot():
+
+    def __init__(self, raw):
+
+        self.raw = raw
+        self.name = raw.get('name', None)
+
+        self.value = raw.get('value', None)
+        self.resolutions = raw.get('resolutions', None)
+        self.confirmed = raw.get('confirmationStatus', None)
+        if self.confirmed:
+            if self.confirmed.lower() == "none":
+                self.confirmed = None
+            elif self.confirmed.lower() == "denied":
+                self.confirmed = False
+            elif self.confirmed.lower() == "confirmed":
+                self.confirmed = True
+
+    def to_json(self):
+        return self.raw
+
+
 class Request():
     """Request class."""
 
@@ -482,14 +720,34 @@ class Request():
         self.slots = None  # Slots provided by request
         self.user = None  # User in the request
         self.args = {}  # Empty args dict
-
+        self.datetime_format = "%Y-%m-%dT%H:%M:%SZ"
+        self.time_format = "%H:%M:%SZ"
         # Check if request is in the event
         if "request" in raw.keys():
             self.raw_request = raw['request']  # Set the request attribute to the request object in the event
+            self.locale = raw['request']['locale']
+
+            self.set_timestamp()
+
         else:
             self.raw_request = raw  # Else set raw_requsto entire event
 
         self._get_request()  # Call the get request method
+
+    def set_timestamp(self):
+
+        raw_time = self.raw_request['timestamp']
+        self.datetime = datetime.strptime(raw_time, self.datetime_format)
+        hour = self.datetime.hour
+
+        if hour > 3 and hour < 12:
+            self.time_friendly = "morning"
+        elif hour >= 12 and hour <= 16:
+            self.time_friendly = "afternoon"
+        elif hour >= 17 and hour <= 20:
+            self.time_friendly = "evening"
+        else:
+            self.time_friendly = "night"
 
     def _get_request(self):
         """Get request attributes."""
@@ -497,7 +755,7 @@ class Request():
         if self.raw_request:
             self.type = self.raw_request['type']  # Set type
             if self.type == 'IntentRequest':  # Check if type is IntentRequest
-                self.intent = self.raw_request['intent']['name']  # Set intent to intent name
+                self.intent = Intent(self.raw_request['intent'], self.raw_request['type'])   # Set intent to intent name
                 self.slots = {}  # Set empty slots dict
                 if 'slots' in self.raw_request['intent'].keys():  # Check if slots is in the request keys
 
@@ -505,14 +763,11 @@ class Request():
                     for k, slot in self.raw_request[
                         'intent'
                     ]['slots'].iteritems():
-                        if 'value' in slot.keys():  # If the slot has a value, se the slot key to the value
-                            self.slots[slot['name']] = slot['value']
-                        else:
-                            self.slots[slot['name']] = None  # Else set the value of the slot key to None
+                        self.slots[slot['name']] = Slot(slot)
 
                     self.args['slots'] = self.slots  # Set the object args slots key to the slots
             else:
-                self.intent = self.raw_request['type']  # Set intent to request ype if it is not IntentRequest
+                self.intent = Intent({}, self.raw_request['type'])  # Set intent to request ype if it is not IntentRequest
 
         else:
             self.attributes = self.raw_session  # Set attributes to the raw session if no raw_request
